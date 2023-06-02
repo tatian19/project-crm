@@ -129,6 +129,7 @@ const resolvers = {
       if (cliente) {
         throw new Error('Ese cliente ya esta registrado')
       }
+      // prueba
       const nuevoCliente = new Cliente(input)
 
       // Asignar el vendedor
