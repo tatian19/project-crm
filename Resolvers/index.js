@@ -1,14 +1,15 @@
 const Usuario = require('../models/Usuario')
 const Producto = require('../models/Producto')
+const Cliente = require('../models/Cliente')
 const bcryptjs = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 require('dotenv').config({path: '.env'})
 
 const crearToken = (usuario, secreta, expiresIn ) => {
-    console.log(usuario);
+    console.log(expiresIn);
     const { id, email, nombre, apellido } = usuario
 
-    return jwt.sign({ id }, secreta, { expiresIn })
+    return jwt.sign({ id, email, nombre, apellido }, secreta, { expiresIn })
 
 }
 // Resolvers
@@ -37,6 +38,40 @@ const resolvers = {
       }
 
       return producto
+    },
+    obtenerClientes: async () => {
+      try {
+        const clientes = await Cliente.find({})
+        return clientes
+      } catch (error) {
+        console.log(error);
+        
+      }
+    },
+    obtenerClientesVendedor: async (_, {}, ctx ) => {
+      try {
+        const clientes = await Cliente.find({ vendedor: ctx.usuario.id.toString() })
+        return clientes
+      } catch (error) {
+        console.log(error);
+        
+      }
+    },
+    obtenerCliente: async (_, { id }, ctx) => {
+      // Revisar si el cliente existe o no
+      const cliente = await Cliente.findById(id)
+
+      if(!cliente) {
+        throw new Error('Producto no encontrado')
+      }
+      // Quien lo crea puede verlo
+
+      if(cliente.vendedor.toString() !== ctx.usuario.id) {
+        throw new Error('No tienes las credenciales')
+      }
+
+      return cliente
+
     }
   },
   Mutation: {
@@ -81,7 +116,7 @@ const resolvers = {
       }
 
       // Crear el token
-      return{
+      return {
         token: crearToken(existeUsuario, process.env.SECRETA, '24h' )
       }
     },
@@ -122,7 +157,10 @@ const resolvers = {
 
       return 'Producto eliminado'
     },
-    nuevoCliente: async (_, { input }) => {
+    nuevoCliente: async (_, { input }, ctx) => {
+
+      console.log('------------------->',ctx);
+
       const { email } = input
       // Verificar si el cliente ya esta registrado
       const cliente = await Cliente.findOne({ email })
@@ -133,7 +171,7 @@ const resolvers = {
       const nuevoCliente = new Cliente(input)
 
       // Asignar el vendedor
-      nuevoCliente.vendedor = "6478afe7cf24fd34a68e9d7c"
+      nuevoCliente.vendedor = ctx.usuario.id;
       // Guardarlo en la base de datos
       try {
         const resultado = await nuevoCliente.save()
