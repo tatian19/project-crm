@@ -159,7 +159,7 @@ const resolvers = {
     },
     nuevoCliente: async (_, { input }, ctx) => {
 
-      console.log('------------------->',ctx);
+      //console.log('------------------->',ctx);
 
       const { email } = input
       // Verificar si el cliente ya esta registrado
